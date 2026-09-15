@@ -4,7 +4,7 @@
    Supabase Dashboard → Settings → API
    ========================================================= */
 
-SUPABASE_URL = "https://ywlhnkqhjddzeqgmlrko.supabase.co";
+const SUPABASE_URL = "https://ywlhnkqhjddzeqgmlrko.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vXt5E19qRVhv-WuX-kUZag_Otd-JpYG";
 
 // عميل Supabase متاح عالميًا لباقي الملفات (data.js, shell.js, login.html)
