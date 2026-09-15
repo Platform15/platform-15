@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملفي الشخصي — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="profile">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <div class="row-2col">
+      <div class="stack">
+        <section class="card" style="text-align:center;">
+          <div class="avatar-fallback" style="width:88px;height:88px;font-size:34px;margin:0 auto 12px;">A</div>
+          <h2 style="margin:0;">Abderrahmane</h2>
+          <p class="text-faint" style="margin:4px 0 12px;">@abderrahmane</p>
+          <span class="status-pill progress" style="margin:0 auto;">🚀 مستوى 3 · المبتدئ المتقدم</span>
+          <div class="progress-bar" style="margin:16px 0 6px;"><div class="progress-fill" style="width:30%;"></div></div>
+          <div class="text-faint" style="font-size:11.5px;">120 / 400 XP</div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">📊 الإحصائيات</h2>
+          <div class="stats-grid">
+            <div class="stat-box"><b>120</b><span>إجمالي XP</span></div>
+            <div class="stat-box"><b>5</b><span>أيام متتالية</span></div>
+            <div class="stat-box"><b>3</b><span>دروس مكتملة</span></div>
+            <div class="stat-box"><b>2</b><span>إنجازات</span></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <h2 class="card-title">🏆 الشارات</h2>
+          <div class="badges-row" id="profileBadges"></div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">📚 مسار التعلم</h2>
+          <div id="profileCourses" class="stack" style="gap:10px;"></div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">🎓 الشهادات</h2>
+          <div class="empty-state">
+            <div class="emoji">📜</div>
+            ستظهر شهاداتك هنا فور إكمال أول دورة كاملة، مع رقم تحقق فريد يمكن مشاركته.
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+document.getElementById("profileBadges").innerHTML = STATE.user.badges.map((b,i)=>`
+  <div class="badge-hex" style="background:${['#d9a44122','#e6524a22','#4a90e622','#34c47b22'][i%4]}">${b}</div>
+`).join("");
+
+document.getElementById("profileCourses").innerHTML = STATE.courses.map(c=>{
+  const pct = c.status==="in_progress" ? Math.round((c.doneLessons/c.totalLessons)*100) : 0;
+  return `
+  <div class="flex items-center gap-12">
+    <div class="course-icon" style="width:38px;height:38px;font-size:16px;background:${c.color}22;color:${c.color};">${c.icon}</div>
+    <div style="flex:1;">
+      <div class="flex justify-between"><b style="font-size:13px;">${c.title}</b><span class="text-faint" style="font-size:11.5px;">${c.status==='roadmap'?'قريبًا':pct+'%'}</span></div>
+      <div class="progress-bar" style="margin-top:4px;"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+}).join("");
+</script>
+</body>
+</html>

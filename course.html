@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تفاصيل الدورة — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="courses">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content" id="courseRoot">
+    <!-- يُملأ عبر JS -->
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/ide-run.js"></script>
+<script src="js/terminal-sim.js"></script>
+<script src="js/code-editor.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const courseId = params.get("id") || "cpp";
+const course = STATE.courses.find(c=>c.id===courseId) || STATE.courses[0];
+const root = document.getElementById("courseRoot");
+
+function stateIcon(s){
+  if(s==="done") return "✅";
+  if(s==="current") return "🔄";
+  if(s==="available") return "▶️";
+  return "🔒";
+}
+
+if(course.status === "roadmap"){
+  root.innerHTML = `
+    <h1 class="section-title">${course.icon} ${course.title}</h1>
+    <p class="section-sub">${course.subtitle} — هذا المسار قيد الإعداد حاليًا.</p>
+    <section class="card">
+      <h2 class="card-title">🗺️ خارطة الطريق</h2>
+      <div class="roadmap">
+        ${course.roadmap.map((step,i)=>`
+          <div class="roadmap-step ${i===0?'current':''}">
+            <div class="num">${String(i+1).padStart(2,'0')}</div>
+            <div class="info"><b>${step}</b><span>${i===0?'المرحلة القادمة':'مخطط له'}</span></div>
+          </div>
+          ${i<course.roadmap.length-1?'<div class="roadmap-connector"></div>':''}
+        `).join("")}
+      </div>
+      <div class="empty-state" style="margin-top:16px;">
+        <div class="emoji">🔔</div>
+        فعّل الإشعارات لتصلك التحديثات فور إتاحة أول وحدة من هذا المسار.
+        <div style="margin-top:12px;"><button class="btn btn-outline btn-sm" onclick="showToast('سنُعلمك فور إطلاق هذا المسار 🚀')">أعلمني عند الإطلاق</button></div>
+      </div>
+    </section>
+  `;
+}else{
+  const pct = Math.round((course.doneLessons/course.totalLessons)*100);
+  // عدّاد يُستخدم لوضع مكان إعلان واحد فوق كل درس (details.lesson-item)،
+  // بالتناوب على مجموعة الإعلانات المتاحة إن وُجد أكثر من إعلان.
+  let lessonAdCounter = 0;
+  root.innerHTML = `
+    <div class="flex items-center gap-12 mb-14" style="flex-wrap:wrap;">
+      <div class="course-icon" style="background:${course.color}22;color:${course.color};width:60px;height:60px;font-size:28px;">${course.icon}</div>
+      <div>
+        <h1 class="section-title" style="margin-bottom:2px;">${course.title}</h1>
+        <p class="text-dim" style="margin:0;font-size:13px;">${course.subtitle} · ${course.totalLessons} درس · ${pct}% مكتمل</p>
+      </div>
+      <a href="#module-current" class="btn btn-gold" style="margin-right:auto;">متابعة التعلم ←</a>
+    </div>
+    <div class="progress-bar mb-20"><div class="progress-fill" style="width:${pct}%"></div></div>
+
+    <div class="row-2col">
+      <div class="stack">
+        <section class="card">
+          <h2 class="card-title">📖 الوحدات والدروس</h2>
+          <div class="stack" style="gap:10px;">
+            ${course.modules.map((m,i)=>`
+              <div class="roadmap-step ${m.state==='current'?'current':''} ${m.state==='done'?'done':''}"
+                   id="${m.state==='current'?'module-current':''}" style="max-width:100%;">
+                <div class="num">${stateIcon(m.state)}</div>
+                <div class="info" style="flex:1;">
+                  <b>${m.title}</b>
+                  <span>${m.done}/${m.lessons} درس ${m.state==='locked' ? '· 🔒 مقفلة حتى إكمال ما قبلها' : ''}</span>
+                  ${(m.items && m.items.length) ? `
+                  <div class="lesson-items">
+                    ${m.items.map(it => `
+                      <details class="lesson-item">
+                        <summary>📝 ${escapeHTML(it.title)}</summary>
+                        <div class="lesson-item-body">
+                          <div class="lesson-ad-slot" data-lesson-ad-index="${lessonAdCounter++}"></div>
+                          ${it.content ? `<p class="lesson-item-desc">${escapeHTML(it.content)}</p>` : ''}
+                          ${it.code ? `<pre class="terminal" style="direction:ltr;"><code class="lesson-code language-${it.codeLang}">${escapeHTML(it.code)}</code></pre>` : ''}
+                          <div class="flex gap-8" style="margin-top:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="event.preventDefault();addLessonWidget('${it.id}','ide')">➕ إضافة IDE</button>
+                            <button class="btn btn-outline btn-sm" onclick="event.preventDefault();addLessonWidget('${it.id}','terminal')">➕ إضافة Terminal</button>
+                          </div>
+                          <div class="lesson-widget-slot" id="widgetSlot-${it.id}"></div>
+                        </div>
+                      </details>
+                    `).join("")}
+                  </div>` : ''}
+                </div>
+                ${m.state!=='locked' ? `<a href="#" class="btn btn-sm ${m.state==='current'?'btn-gold':'btn-outline'}">${m.state==='done'?'مراجعة':'فتح'}</a>` : ''}
+              </div>
+            `).join("")}
+          </div>
+        </section>
+
+        ${course.id==='cpp' ? `
+        <section class="card">
+          <h2 class="card-title">📝 تمرين مضمّن — IDE مصغّر</h2>
+          <p class="section-sub" style="margin-top:-8px;">جرّب الكود مباشرة هنا. زر "تشغيل" ينفّذ الكود، وزر "تحقق من الحل" يقارن الناتج باختبارات الدرس.</p>
+          <textarea id="miniIde" class="terminal" spellcheck="false" style="min-height:180px;width:100%;border:1px solid var(--c-border);">#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, 15!" << endl;
+    return 0;
+}</textarea>
+          <div class="flex gap-8" style="margin-top:12px;">
+            <button class="btn btn-gold btn-sm" onclick="runMiniIde()">▶️ تشغيل</button>
+            <button class="btn btn-outline btn-sm" onclick="checkMiniIde()">✅ تحقق من الحل</button>
+            <button class="btn btn-ghost btn-sm" onclick="location.href='tools.html#ide'">فتح في IDE الكامل ↗</button>
+          </div>
+          <div class="terminal vscode-output" id="ideOutput" style="margin-top:10px;min-height:60px;">// سيظهر ناتج التشغيل هنا</div>
+        </section>` : ''}
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <h2 class="card-title">ℹ️ عن الدورة</h2>
+          <p class="text-dim" style="font-size:13px;">تعلّم بالممارسة: كل وحدة تنتهي بتمرين عملي وتحقق تلقائي، وتُحتسب نتيجتك ضمن نسبة تقدّم الدورة.</p>
+        </section>
+        <section class="card">
+          <h2 class="card-title">🏅 شارات هذه الدورة</h2>
+          <div class="badges-row">
+            <div class="badge-hex" style="background:#d9a44122;">🥇</div>
+            <div class="badge-hex" style="background:var(--c-bg-elev-2);color:var(--c-text-faint);border:1.5px dashed var(--c-border);">🔒</div>
+            <div class="badge-hex" style="background:var(--c-bg-elev-2);color:var(--c-text-faint);border:1.5px dashed var(--c-border);">🔒</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  `;
+}
+
+/* محرر IDE المصغّر (C++) — يتحوّل لمحرر ملوّن بأسلوب Visual Studio Code */
+let miniIdeEditor = null;
+const miniIdeEl = document.getElementById("miniIde");
+if(miniIdeEl){
+  (async ()=>{
+    miniIdeEditor = await mountCodeEditor(miniIdeEl, { lang: "cpp", tabBar: true, minHeight: "180px" });
+  })();
+}
+
+/* إضافة IDE أو طرفية أسفل أي درس، عند الطلب فقط (زر ➕) —
+   كل درس له عنصر خاص به معرَّف بمعرّف الدرس (it.id)، لذا يمكن
+   لعدة دروس أن تملك أدواتها الخاصة في نفس الوقت بدون تعارض. */
+const LESSON_WIDGET_STARTERS = {
+  javascript: `console.log("مرحبًا من منصة 15!");`,
+  python: `print("مرحبًا من منصة 15!")`,
+  cpp: `#include <iostream>\nusing namespace std;\n\nint main(){\n    cout << "مرحبًا من منصة 15!" << endl;\n    return 0;\n}`
+};
+
+function addLessonWidget(itemId, type){
+  const slot = document.getElementById(`widgetSlot-${itemId}`);
+  if(!slot) return;
+
+  const existing = slot.querySelector(`.widget-${type}`);
+  if(existing){ existing.remove(); return; } // الضغط مرة ثانية يزيل الأداة
+
+  if(type === "ide"){
+    const wrap = document.createElement("div");
+    wrap.className = "widget-ide";
+    wrap.style.cssText = "margin-top:10px;padding:12px;background:var(--c-bg-elev-2);border:1px solid var(--c-border-soft);border-radius:var(--radius-s);";
+    wrap.innerHTML = `
+      <div class="flex items-center gap-8" style="margin-bottom:8px;flex-wrap:wrap;">
+        <b style="font-size:12.5px;">💻 IDE مصغّر</b>
+        <select class="btn btn-ghost btn-sm" data-role="lang" style="border:1px solid var(--c-border);">
+          <option value="javascript" selected>JavaScript ✅</option>
+          <option value="python">Python ✅</option>
+          <option value="cpp">C++ ✅</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" style="margin-right:auto;" onclick="this.closest('.widget-ide').remove()">✖️ إغلاق</button>
+      </div>
+      <textarea class="terminal" data-role="code" spellcheck="false" style="min-height:140px;width:100%;border:1px solid var(--c-border);resize:vertical;direction:ltr;">${LESSON_WIDGET_STARTERS.javascript}</textarea>
+      <div class="flex gap-8" style="margin-top:10px;">
+        <button class="btn btn-gold btn-sm" data-role="run">▶️ تشغيل</button>
+      </div>
+      <div class="terminal vscode-output" data-role="output" style="margin-top:10px;min-height:50px;">// سيظهر ناتج التشغيل هنا</div>
+    `;
+    slot.appendChild(wrap);
+
+    const langSel = wrap.querySelector('[data-role="lang"]');
+    const codeArea = wrap.querySelector('[data-role="code"]');
+    const outEl = wrap.querySelector('[data-role="output"]');
+    const runBtn = wrap.querySelector('[data-role="run"]');
+
+    let widgetEditor = null;
+    (async ()=>{
+      widgetEditor = await mountCodeEditor(codeArea, { lang: "javascript", tabBar: false, minHeight: "140px" });
+    })();
+
+    langSel.addEventListener("change", ()=>{
+      if(!widgetEditor) return;
+      const current = widgetEditor.getValue().trim();
+      const isUnmodified = Object.values(LESSON_WIDGET_STARTERS).includes(current) || !current;
+      if(isUnmodified) widgetEditor.setValue(LESSON_WIDGET_STARTERS[langSel.value] || "");
+      widgetEditor.setLang(langSel.value);
+      outEl.textContent = "// سيظهر ناتج التشغيل هنا";
+    });
+    runBtn.addEventListener("click", ()=>{
+      if(!widgetEditor) return;
+      runUserCode(langSel.value, widgetEditor.getValue(), outEl);
+    });
+
+  } else if(type === "terminal"){
+    const wrap = document.createElement("div");
+    wrap.className = "widget-terminal";
+    wrap.style.cssText = "margin-top:10px;padding:12px;background:var(--c-bg-elev-2);border:1px solid var(--c-border-soft);border-radius:var(--radius-s);";
+    wrap.innerHTML = `
+      <div class="flex items-center gap-8" style="margin-bottom:8px;flex-wrap:wrap;">
+        <b style="font-size:12.5px;">🐧 محاكي طرفية</b>
+        <button class="btn btn-outline btn-sm" data-role="kali">Kali Mode 🛡️</button>
+        <button class="btn btn-outline btn-sm" data-role="termux">Termux Mode 📱</button>
+        <button class="btn btn-ghost btn-sm" style="margin-right:auto;" onclick="this.closest('.widget-terminal').remove()">✖️ إغلاق</button>
+      </div>
+      <div class="terminal term-sim" data-role="term-output" style="min-height:160px;"></div>
+      <div class="chat-input-row" style="margin-top:10px;direction:ltr;">
+        <input type="text" data-role="term-input" placeholder="type a command..." style="text-align:left;font-family:monospace;">
+        <button class="btn btn-gold btn-sm" data-role="term-run">Run</button>
+      </div>
+    `;
+    slot.appendChild(wrap);
+
+    const outEl = wrap.querySelector('[data-role="term-output"]');
+    const inputEl = wrap.querySelector('[data-role="term-input"]');
+    const sim = new TerminalSim(outEl, inputEl);
+    wrap.querySelector('[data-role="kali"]').addEventListener("click", ()=> sim.setMode("kali"));
+    wrap.querySelector('[data-role="termux"]').addEventListener("click", ()=> sim.setMode("termux"));
+    wrap.querySelector('[data-role="term-run"]').addEventListener("click", ()=> sim.submit());
+  }
+}
+
+function runMiniIde(){
+  const code = miniIdeEditor ? miniIdeEditor.getValue() : document.getElementById("miniIde").value;
+  const out = document.getElementById("ideOutput");
+  out.style.color = "#d4d4d4";
+  if(code.includes("cout")){
+    out.textContent = "Hello, 15!\n\n[تنفيذ تجريبي محليًا — التشغيل الحقيقي للكود يتطلب بيئة IDE الكاملة، راجع README لتفاصيل الربط بخدمة تنفيذ آمنة]";
+  }else{
+    out.textContent = "// لم يتم العثور على مخرجات — تأكد من استخدام cout";
+  }
+}
+function checkMiniIde(){
+  showToast("✅ هذا نموذج تجريبي — التحقق الحقيقي من الحل يحتاج تشغيل اختبارات على الخادم");
+}
+
+/* تلوين أكواد الدروس المعروضة (إن وُجدت) عبر Prism.js — نفس المحرك
+   المستخدم في نافذة "درس جديد" (js/shell.js)، يُحمَّل هنا بشكل كسول
+   فقط إذا كانت هناك دروس تحتوي كودًا لعرضه. */
+function highlightVisibleLessonCode(){
+  const blocks = document.querySelectorAll("code.lesson-code");
+  if(!blocks.length || typeof ensurePrismLoaded !== "function") return;
+  ensurePrismLoaded().then(() => {
+    blocks.forEach(el => { if(window.Prism) Prism.highlightElement(el); });
+  });
+}
+highlightVisibleLessonCode();
+// إعادة رسم الصفحة تلقائيًا عند إنشاء درس جديد لهذه الدورة من نافذة الأدمن
+document.addEventListener("lessonCreated", (e) => {
+  if(e.detail && e.detail.courseId === courseId) location.reload();
+});
+
+/* =========================================================
+   إعلان واحد أسفل عنوان كل درس وفوق محتواه، بالتناوب على مجموعة
+   الإعلانات المتاحة إن وُجد أكثر من إعلان. البناء الفعلي لوسم
+   <ins class="adsbygoogle"> موجود في js/ads.js المشترك (نفس الطبقة
+   المستخدمة في بطاقة "📢 إعلاناتك" بالصفحة الرئيسية).
+
+   ملاحظة مهمة: محتوى <details> (وبالتالي مكان الإعلان) يبقى مخفيًا
+   (display:none) طالما الدرس غير مفتوح. لو فعّلنا كل الإعلانات دفعة
+   واحدة عند تحميل الصفحة، ستفشل AdSense في تحديد حجمها (عرض=0) لأنها
+   غير مرئية بعد. لذلك نفعّل إعلان كل درس فقط لحظة فتحه فعليًا. */
+function fillLessonAd(details){
+  if(!details.open) return;
+  const slot = details.querySelector(".lesson-ad-slot");
+  if(!slot) return;
+  const ads = currentAdsPool();
+  if(!ads.length){ slot.innerHTML = ""; return; }
+  const idx = parseInt(slot.dataset.lessonAdIndex, 10) || 0;
+  const ad = ads[idx % ads.length];
+  slot.innerHTML = adSlotHTML(ad, { adminControls: STATE.user.isAdmin });
+  activateAds([ad]);
+}
+function refreshOpenLessonAds(){
+  document.querySelectorAll("details.lesson-item[open]").forEach(fillLessonAd);
+}
+document.querySelectorAll("details.lesson-item").forEach(details => {
+  details.addEventListener("toggle", () => fillLessonAd(details));
+});
+document.addEventListener("adsPoolUpdated", refreshOpenLessonAds);
+document.addEventListener("adCreated", refreshOpenLessonAds);
+document.addEventListener("adminStatusReady", refreshOpenLessonAds);
+refreshAdsPool();
+</script>
+
+</body>
+</html>

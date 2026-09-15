@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الاختبارات — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="quizzes">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">📝 الاختبارات</h1>
+    <p class="section-sub">قِس فهمك بعد كل وحدة — تصحيح فوري وشرح للإجابات.</p>
+
+    <section class="card">
+      <h2 class="card-title">اختبار: الشروط والحلقات (C++)</h2>
+      <div class="stack" id="quizArea"></div>
+      <button class="btn btn-gold" style="margin-top:14px;" onclick="submitQuiz()">إرسال الإجابات</button>
+      <div id="quizResult" style="margin-top:14px;"></div>
+    </section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+const questions = [
+  { q: "ما ناتج هذا الكود؟\nfor(int i=0;i<3;i++) cout << i;", options:["012","123","0123","خطأ"], correct:0,
+    explain: "الحلقة تبدأ من 0 وتتوقف عند i<3، فتطبع 0 ثم 1 ثم 2." },
+  { q: "أي أمر يُستخدم للخروج الفوري من حلقة؟", options:["continue","break","exit","return"], correct:1,
+    explain: "break يوقف تنفيذ الحلقة فورًا وينتقل لما بعدها." },
+  { q: "عبارة if/else تُستخدم من أجل:", options:["تكرار كود","اتخاذ قرار بناءً على شرط","تعريف متغير","استيراد مكتبة"], correct:1,
+    explain: "if/else تنفّذ كودًا مختلفًا حسب تحقق شرط منطقي." }
+];
+
+document.getElementById("quizArea").innerHTML = questions.map((item,qi)=>`
+  <div class="card" style="background:var(--c-bg-elev-2);">
+    <b style="display:block;margin-bottom:10px;white-space:pre-wrap;font-size:13.5px;">${qi+1}. ${item.q}</b>
+    ${item.options.map((o,oi)=>`
+      <label class="flex items-center gap-8" style="padding:8px 4px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="q${qi}" value="${oi}"> ${o}
+      </label>`).join("")}
+  </div>
+`).join("");
+
+function submitQuiz(){
+  let score = 0;
+  let html = "";
+  questions.forEach((item,qi)=>{
+    const sel = document.querySelector(`input[name="q${qi}"]:checked`);
+    const val = sel ? parseInt(sel.value) : -1;
+    const ok = val === item.correct;
+    if(ok) score++;
+    html += `<div class="empty-state" style="text-align:right;border-color:${ok?'var(--c-success)':'var(--c-danger)'};margin-bottom:8px;">
+      <b>${ok ? '✅ إجابة صحيحة' : '❌ إجابة غير صحيحة'}</b> — ${item.explain}
+    </div>`;
+  });
+  document.getElementById("quizResult").innerHTML = `
+    <div class="status-pill progress" style="font-size:13px;margin-bottom:10px;">النتيجة: ${score}/${questions.length}</div>
+    ${html}`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="flex items-center gap-8" style="justify-content:center;margin-bottom:22px;">
+      <span class="brand-badge">15</span>
+      <span class="brand-name" style="color:var(--c-gold-light);font-weight:800;font-size:19px;">منصة</span>
+    </div>
+    <div class="tabs" style="justify-content:center;">
+      <div class="tab active" data-t="login">تسجيل الدخول</div>
+      <div class="tab" data-t="signup">إنشاء حساب</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="field"><label>البريد الإلكتروني</label><input id="loginEmail" type="email" required placeholder="example@mail.com"></div>
+      <div class="field"><label>كلمة المرور</label><input id="loginPassword" type="password" required placeholder="••••••••"></div>
+      <button type="submit" class="btn btn-gold btn-block" id="loginSubmitBtn">تسجيل الدخول</button>
+    </form>
+
+    <form id="signupForm" style="display:none;">
+      <div class="field"><label>الاسم الكامل</label><input id="signupName" type="text" required></div>
+      <div class="field"><label>البريد الإلكتروني</label><input id="signupEmail" type="email" required></div>
+      <div class="field"><label>كلمة المرور</label><input id="signupPassword" type="password" required minlength="6"></div>
+      <button type="submit" class="btn btn-gold btn-block" id="signupSubmitBtn">إنشاء الحساب</button>
+    </form>
+
+    <p id="authError" class="text-faint" style="text-align:center;font-size:12px;margin-top:14px;color:#e6524a;display:none;"></p>
+
+    <p class="text-faint" style="text-align:center;font-size:11.5px;margin-top:16px;" id="authNote">
+      هذه نسخة عرض تجريبي — أي بيانات تُدخلها تبقى محليًا في متصفحك فقط.
+    </p>
+  </div>
+</div>
+<script>
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("loginForm").style.display = t.dataset.t==="login" ? "block":"none";
+    document.getElementById("signupForm").style.display = t.dataset.t==="signup" ? "block":"none";
+  });
+});
+const authError = document.getElementById("authError");
+function showAuthError(msg){
+  authError.textContent = msg;
+  authError.style.display = "block";
+}
+
+// إذا لم يُعدّ Supabase بعد، أخبر المستخدم واسمح له بالمتابعة بنفس السلوك القديم (شكلي/محلي)
+if(!window.supabaseClient){
+  document.getElementById("authNote").textContent =
+    "⚠️ لم يتم ربط Supabase بعد (js/supabase-client.js) — الدخول حاليًا شكلي فقط ولن يُحفظ في قاعدة بيانات.";
+}
+
+document.getElementById("loginForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  authError.style.display = "none";
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  if(!window.supabaseClient){ location.href = "index.html"; return; }
+
+  const btn = document.getElementById("loginSubmitBtn");
+  btn.disabled = true; btn.textContent = "جارٍ الدخول...";
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = "تسجيل الدخول";
+
+  if(error){ showAuthError(error.message); return; }
+  location.href = "index.html";
+});
+
+document.getElementById("signupForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  authError.style.display = "none";
+  const name = document.getElementById("signupName").value.trim();
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value;
+
+  if(!window.supabaseClient){ location.href = "index.html"; return; }
+
+  const btn = document.getElementById("signupSubmitBtn");
+  btn.disabled = true; btn.textContent = "جارٍ الإنشاء...";
+  const { data, error } = await supabaseClient.auth.signUp({
+    email, password,
+    options: { data: { full_name: name } }
+  });
+  btn.disabled = false; btn.textContent = "إنشاء الحساب";
+
+  if(error){ showAuthError(error.message); return; }
+
+  // لو كان تأكيد البريد مفعّلًا في مشروعك، لن توجد جلسة فورية بعد signUp
+  if(!data.session){
+    showAuthError("تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب قبل الدخول.");
+    authError.style.color = "var(--c-gold-light, #d4af37)";
+    return;
+  }
+  location.href = "index.html";
+});
+</script>
+</body>
+</html>

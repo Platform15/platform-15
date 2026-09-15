@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإشعارات — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="notifications">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <div class="flex justify-between items-center mb-14" style="flex-wrap:wrap;gap:10px;">
+      <h1 class="section-title" style="margin:0;">🔔 إشعاراتي</h1>
+      <button class="btn btn-outline btn-sm" onclick="markAllRead()">تعليم الكل كمقروء</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-f="all">الكل</div>
+      <div class="tab" data-f="learning">تعليمية</div>
+      <div class="tab" data-f="social">اجتماعية</div>
+      <div class="tab" data-f="system">نظام</div>
+    </div>
+
+    <div id="notifList"></div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+const icons = { system:"⚙️", social:"💬", learning:"📘" };
+let filter = "all";
+
+function render(){
+  const list = STATE.notifications.filter(n => filter==="all" || n.type===filter);
+  document.getElementById("notifList").innerHTML = list.length ? list.map(n=>`
+    <div class="notif-item ${n.unread?'unread':''}">
+      <div class="notif-ico">${icons[n.type]||"🔔"}</div>
+      <div class="notif-text"><b>${n.title}</b><span>${n.body}</span></div>
+      <div class="notif-time">${n.time}</div>
+    </div>
+  `).join("") : `<div class="empty-state"><div class="emoji">🔕</div>لا توجد إشعارات في هذا القسم.</div>`;
+}
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    filter = t.dataset.f;
+    render();
+  });
+});
+
+function markAllRead(){
+  STATE.notifications.forEach(n=>n.unread=false);
+  saveState(STATE);
+  render();
+  showToast("تم تعليم كل الإشعارات كمقروءة");
+}
+
+render();
+</script>
+</body>
+</html>

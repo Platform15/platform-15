@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الدورات — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="courses">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">📚 الدورات</h1>
+    <p class="section-sub">استكشف دوراتك المفضلة وابدأ التعلم — كل دورة مقسّمة لوحدات ودروس تفاعلية.</p>
+
+    <div class="grid-4" id="allCourses" style="margin-bottom:28px;"></div>
+
+    <h2 class="section-title" style="font-size:16px;">🗺️ قيد التطوير — تابع خارطة الطريق</h2>
+    <p class="section-sub">هذه المسارات قيد البناء بجدّية. تصفّح المراحل المخطط لها وعُد لاحقًا لبدء التعلم.</p>
+    <div id="roadmapCourses" class="stack"></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+function statusMeta(c){
+  if(c.status === "in_progress") return {label:"قيد التعلم", cls:"progress"};
+  if(c.status === "roadmap") return {label:"خارطة طريق", cls:"locked"};
+  return {label:"متاحة", cls:"active"};
+}
+
+const active = STATE.courses.filter(c=>c.status!=="roadmap");
+const roadmap = STATE.courses.filter(c=>c.status==="roadmap");
+
+document.getElementById("allCourses").innerHTML = active.map(c=>{
+  const pct = c.status==="in_progress" ? Math.round((c.doneLessons/c.totalLessons)*100) : 0;
+  const meta = statusMeta(c);
+  return `
+  <div class="course-card">
+    <div class="course-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+    <span class="status-pill ${meta.cls}">${meta.label}</span>
+    <h3>${c.title}</h3>
+    <p>${c.subtitle}</p>
+    <div class="course-progress-row"><span>${c.doneLessons}/${c.totalLessons} درس</span><span>${pct}%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <a href="course.html?id=${c.id}" class="btn btn-gold btn-block btn-sm">متابعة الدرس ←</a>
+  </div>`;
+}).join("");
+
+document.getElementById("roadmapCourses").innerHTML = roadmap.map(c => `
+  <section class="card" id="${c.id}">
+    <h2 class="card-title"><span style="font-size:20px;">${c.icon}</span> ${c.title}</h2>
+    <p class="section-sub" style="margin-top:-8px;">${c.subtitle} — قيد الإعداد، تابعنا للتحديثات 🚀</p>
+    <div class="roadmap">
+      ${c.roadmap.map((step,i)=>`
+        <div class="roadmap-step ${i===0?'current':''}">
+          <div class="num">${String(i+1).padStart(2,'0')}</div>
+          <div class="info"><b>${step}</b><span>${i===0?'المرحلة القادمة':'مخطط له'}</span></div>
+        </div>
+        ${i<c.roadmap.length-1?'<div class="roadmap-connector"></div>':''}
+      `).join("")}
+    </div>
+  </section>
+`).join("");
+</script>
+</body>
+</html>

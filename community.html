@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المجتمع — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="community">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">👥 المجتمع</h1>
+    <p class="section-sub">تواصل مع المتعلمين الآخرين، شارك تقدمك، واطرح أسئلتك.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="posts">المنشورات</div>
+      <div class="tab" data-tab="questions">الأسئلة</div>
+      <div class="tab" data-tab="members">الأعضاء</div>
+    </div>
+
+    <div id="tab-posts">
+      <div class="card mb-14">
+        <textarea placeholder="شارك تقدمك أو أنجازك مع المجتمع..." rows="2"
+          style="width:100%;background:var(--c-bg-elev-2);border:1px solid var(--c-border);border-radius:var(--radius-s);padding:10px 12px;color:var(--c-text);font-family:inherit;resize:vertical;"></textarea>
+        <div class="flex justify-between items-center" style="margin-top:10px;">
+          <span class="text-faint" style="font-size:12px;">#️⃣ وسم — نص فقط، لا صور أو فيديوهات</span>
+          <button class="btn btn-gold btn-sm" onclick="showToast('تم نشر المنشور ✅')">نشر</button>
+        </div>
+      </div>
+      <div id="postsList"></div>
+    </div>
+
+    <div id="tab-questions" style="display:none;">
+      <div class="empty-state">
+        <div class="emoji">❓</div>
+        لا توجد أسئلة بعد — كن أول من يطرح سؤالًا تقنيًا على المجتمع.
+      </div>
+    </div>
+
+    <div id="tab-members" style="display:none;">
+      <div class="grid-3" id="membersList"></div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+document.getElementById("postsList").innerHTML = STATE.community.map(p=>`
+  <div class="post-card">
+    <div class="post-head">
+      <div class="avatar-fallback">${escapeHTML(p.name).charAt(0)}</div>
+      <div><b>${escapeHTML(p.name)}</b><span>${escapeHTML(p.time)}</span></div>
+    </div>
+    <div class="post-body"><b style="color:var(--c-text);display:block;margin-bottom:4px;">${escapeHTML(p.title)}</b>${escapeHTML(p.body)}</div>
+    <div class="post-actions">
+      <span style="cursor:pointer;">❤️ ${p.likes}</span>
+      <span>💬 ${p.comments}</span>
+      <span style="cursor:pointer;">🔖 حفظ</span>
+    </div>
+  </div>
+`).join("");
+
+const members = ["Mohamed","Sara","Youssef","Lina","Ahmed","Nour"];
+document.getElementById("membersList").innerHTML = members.map(n=>`
+  <div class="card" style="text-align:center;">
+    <div class="avatar-fallback" style="margin:0 auto 8px;">${n.charAt(0)}</div>
+    <b style="font-size:13.5px;">${n}</b>
+    <div class="text-faint" style="font-size:11.5px;margin:4px 0 10px;">مستوى ${Math.floor(Math.random()*5)+1}</div>
+    <button class="btn btn-outline btn-sm btn-block">متابعة</button>
+  </div>
+`).join("");
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    ["posts","questions","members"].forEach(k=>{
+      document.getElementById("tab-"+k).style.display = (k===t.dataset.tab)?"block":"none";
+    });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإعدادات — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="settings">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">⚙️ الإعدادات</h1>
+
+    <div class="row-2col">
+      <div class="stack">
+        <section class="card">
+          <h2 class="card-title">👤 الملف الشخصي</h2>
+          <div class="field"><label>الاسم</label><input type="text" value="Abderrahmane"></div>
+          <div class="field"><label>اسم المستخدم</label><input type="text" value="abderrahmane"></div>
+          <div class="field"><label>البريد الإلكتروني</label><input type="email" value="abderrahmane@example.com"></div>
+          <button class="btn btn-gold" onclick="showToast('تم حفظ التغييرات ✅')">حفظ التغييرات</button>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">🔐 الأمان</h2>
+          <div class="field"><label>كلمة المرور الحالية</label><input type="password" placeholder="••••••••"></div>
+          <div class="field"><label>كلمة المرور الجديدة</label><input type="password" placeholder="••••••••"></div>
+          <div class="flex items-center justify-between" style="margin-top:10px;">
+            <span style="font-size:13.5px;">تفعيل المصادقة الثنائية (2FA)</span>
+            <label class="flex items-center gap-8"><input type="checkbox"> تفعيل</label>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <h2 class="card-title">🔔 تفضيلات الإشعارات</h2>
+          ${["تعليمية (دروس جديدة، تذكيرات)","اجتماعية (تعليقات، متابعون)","نظام (تحديثات، صيانة)"].map(l=>`
+            <label class="flex items-center justify-between" style="padding:8px 0;font-size:13px;border-bottom:1px solid var(--c-border-soft);">
+              ${l} <input type="checkbox" checked>
+            </label>`).join("")}
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">🌐 اللغة والمظهر</h2>
+          <div class="field"><label>اللغة</label>
+            <select><option>العربية</option><option disabled>English (قريبًا)</option></select>
+          </div>
+          <div class="field"><label>المظهر</label>
+            <select id="themeSelect"><option value="dark">داكن</option><option value="light">فاتح</option></select>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">⚠️ منطقة الخطر</h2>
+          <button class="btn btn-outline btn-block" onclick="if(confirm('سيتم مسح كل البيانات التجريبية المخزّنة محليًا، هل أنت متأكد؟')) resetState();">إعادة تعيين بيانات العرض التجريبي</button>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+const sel = document.getElementById("themeSelect");
+sel.value = localStorage.getItem("mansa15_theme")==="light" ? "light" : "dark";
+sel.addEventListener("change", ()=>{
+  if(sel.value==="light"){ document.documentElement.setAttribute("data-theme","light"); localStorage.setItem("mansa15_theme","light"); }
+  else{ document.documentElement.removeAttribute("data-theme"); localStorage.setItem("mansa15_theme","dark"); }
+  showToast("تم تحديث المظهر");
+});
+</script>
+</body>
+</html>

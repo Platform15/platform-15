@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الرئيسية — منصة 15</title>
+<meta name="description" content="منصة 15 — تعلّم البرمجة، الأمن السيبراني، والمهارات التقنية">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+
+    <section class="hero">
+      <div class="hero-text">
+        <div class="hero-eyebrow">مرحبًا بعودتك، Abderrahmane 👋</div>
+        <h1 class="hero-title">مرحبًا بك في <b>منصة 15</b></h1>
+        <p class="hero-sub">مكانك لتعلم البرمجة، الأمن السيبراني، والمهارات التقنية — خطوة بخطوة وبمسار واضح.</p>
+        <a href="courses.html" class="btn btn-gold">ابدأ رحلتك الآن ←</a>
+      </div>
+      <div class="hero-mark">15<span>معًا نحو مستقبل أفضل</span></div>
+    </section>
+
+    <div class="row-2col">
+      <div class="stack">
+
+        <!-- الدورات المتاحة -->
+        <section class="card">
+          <h2 class="card-title">📚 الدورات المتاحة <a href="courses.html" class="card-link">عرض الكل ←</a></h2>
+          <div class="grid-4" id="dashCourses"></div>
+        </section>
+
+        <!-- المشاريع -->
+        <section class="card">
+          <h2 class="card-title">🧪 المشاريع <a href="projects.html" class="card-link">عرض الكل ←</a></h2>
+          <div class="empty-state">
+            <div class="emoji">🛠️</div>
+            لم تبدأ أي مشروع بعد — طبّق ما تعلمته في مشروع عملي بمجرد إكمال أول وحدة.
+            <div style="margin-top:12px;"><a href="projects.html" class="btn btn-outline btn-sm">استكشف المشاريع</a></div>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="stack">
+        <!-- إحصائيات -->
+        <section class="card">
+          <h2 class="card-title">📊 إحصائياتك</h2>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="ico">⭐</div><b>120</b><span>إجمالي XP</span></div>
+            <div class="stat-box"><div class="ico">🔥</div><b>5</b><span>سلسلة التعلم (أيام)</span></div>
+            <div class="stat-box"><div class="ico">🏅</div><b>2</b><span>الإنجازات</span></div>
+            <div class="stat-box"><div class="ico">✅</div><b>3</b><span>الدروس المكتملة</span></div>
+          </div>
+        </section>
+
+        <!-- الشارات -->
+        <section class="card">
+          <h2 class="card-title">🏆 شاراتي</h2>
+          <div class="badges-row" id="dashBadges"></div>
+        </section>
+
+        <!-- الإعلانات -->
+        <section class="card">
+          <h2 class="card-title">📢 إعلاناتك</h2>
+          <div id="dashAds"></div>
+        </section>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/shell.js"></script>
+<script>
+function courseStatusMeta(c){
+  if(c.status === "in_progress") return {label:"قيد التعلم", cls:"progress"};
+  if(c.status === "roadmap") return {label:"خارطة طريق", cls:"locked"};
+  return {label:"متاحة", cls:"active"};
+}
+
+function renderDashCourses(){
+  const el = document.getElementById("dashCourses");
+  el.innerHTML = STATE.courses.map(c=>{
+    const pct = c.status==="in_progress" ? Math.round((c.doneLessons/c.totalLessons)*100) : 0;
+    const meta = courseStatusMeta(c);
+    return `
+    <div class="course-card">
+      <div class="course-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <span class="status-pill ${meta.cls}">${meta.label}</span>
+      <h3>${c.title}</h3>
+      <p>${c.subtitle}</p>
+      ${c.status==="in_progress" ? `
+        <div class="course-progress-row"><span>${c.doneLessons}/${c.totalLessons} درس</span><span>${pct}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ` : `
+        <div class="text-faint" style="font-size:11.5px;">${c.roadmap.length} مرحلة مخطط لها 🗺️</div>
+      `}
+      <a href="course.html?id=${c.id}" class="btn ${c.status==='in_progress'?'btn-gold':'btn-outline'} btn-block btn-sm">
+        ${c.status==='in_progress' ? 'متابعة الدرس ←' : c.status==='roadmap' ? 'شاهد خارطة الطريق' : 'عرض الدورة'}
+      </a>
+    </div>`;
+  }).join("");
+}
+
+function renderDashBadges(){
+  document.getElementById("dashBadges").innerHTML = STATE.user.badges.map((b,i)=>`
+    <div class="badge-hex" style="background:${['#d9a44122','#e6524a22','#4a90e622','#34c47b22'][i%4]}">${b}</div>
+  `).join("") + `<div class="badge-hex" style="background:var(--c-bg-elev-2);color:var(--c-text-faint);border:1.5px dashed var(--c-border);">+3</div>`;
+}
+
+/* =========================================================
+   عرض إعلانات Google AdSense التي أضافها الأدمن (زر ＋ ← إعلان
+   جديد) ضمن بطاقة "📢 إعلاناتك" تحت بطاقة الشارات. هذه البطاقة
+   تعرض إعلانًا واحدًا أو اثنين كحد أقصى (DASH_ADS_LIMIT) — أي
+   إعلانات إضافية تظهر بأماكن أخرى (مثل أعلى كل درس في course.html)
+   بدل تكديسها كلها هنا. البناء الفعلي لوسم <ins class="adsbygoogle">
+   والتحميل الكسول لسكربت AdSense موجودان في js/ads.js المشترك.
+   ========================================================= */
+const DASH_ADS_LIMIT = 2;
+
+function renderDashAds(){
+  const el = document.getElementById("dashAds");
+  const ads = currentAdsPool().slice(0, DASH_ADS_LIMIT);
+
+  if(!ads.length){
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">🎓</div>
+        مستقبلك يبدأ بتعلم اليوم. طوّر مهاراتك واحصل على فرص أفضل.
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = ads.map(ad => adSlotHTML(ad, { adminControls: STATE.user.isAdmin })).join("");
+  activateAds(ads);
+}
+document.addEventListener("adsPoolUpdated", renderDashAds);
+// نعيد الرسم بعد التأكد من صلاحية الأدمن الحقيقية (تُظهر/تُخفي أزرار
+// الحذف بحسب ما يقرّه جدول admins فعليًا، لا القيمة المحلية القديمة).
+document.addEventListener("adminStatusReady", renderDashAds);
+
+renderDashCourses();
+renderDashBadges();
+renderDashAds();
+refreshAdsPool();
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الرسائل — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="messages">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">✉️ الرسائل</h1>
+    <div class="chat-shell">
+      <div class="card chat-list" id="chatList"></div>
+      <div class="card chat-window">
+        <div class="flex items-center gap-12 mb-14" id="chatHeader"></div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="اكتب رسالة...">
+          <button class="btn btn-gold btn-sm" onclick="sendMsg()">إرسال</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+let activeId = STATE.messages[0].id;
+
+function renderList(){
+  document.getElementById("chatList").innerHTML = STATE.messages.map(m=>`
+    <div class="chat-item ${m.id===activeId?'active':''}" onclick="openChat('${m.id}')">
+      <div class="avatar-fallback">${m.name.charAt(0)}</div>
+      <div class="meta"><b>${m.name}</b><span>${m.last}</span></div>
+      <div style="text-align:left;">
+        <div class="text-faint" style="font-size:10.5px;">${m.time}</div>
+        ${m.unread ? `<span class="mini-badge">${m.unread}</span>` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderChat(){
+  const m = STATE.messages.find(x=>x.id===activeId);
+  document.getElementById("chatHeader").innerHTML = `
+    <div class="avatar-fallback">${m.name.charAt(0)}</div>
+    <div><b style="display:block;font-size:14px;">${m.name}</b><span class="text-faint" style="font-size:11.5px;">🟢 متصل الآن</span></div>`;
+  document.getElementById("chatMessages").innerHTML = m.thread.map(t=>`
+    <div class="bubble ${t.from==='me'?'out':'in'}">${t.text}</div>
+  `).join("");
+}
+
+function openChat(id){
+  activeId = id;
+  const m = STATE.messages.find(x=>x.id===id);
+  m.unread = 0;
+  renderList(); renderChat();
+}
+
+function sendMsg(){
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if(!text) return;
+  const m = STATE.messages.find(x=>x.id===activeId);
+  m.thread.push({from:"me", text});
+  m.last = text;
+  input.value = "";
+  renderChat(); renderList();
+}
+document.getElementById("chatInput").addEventListener("keydown", e=>{ if(e.key==="Enter") sendMsg(); });
+
+renderList(); renderChat();
+</script>
+</body>
+</html>

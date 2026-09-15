@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المشاريع — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="projects">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">🧪 المشاريع</h1>
+    <p class="section-sub">طبّق ما تعلمته من خلال مشاريع عملية — IDE كامل مرتبط بمستودع كل مشروع.</p>
+
+    <div class="grid-3">
+      <div class="course-card">
+        <div class="course-icon" style="background:#4dc98a22;color:#4dc98a;">🧮</div>
+        <span class="status-pill active">متاح</span>
+        <h3>حاسبة C++ بسيطة</h3>
+        <p>طبّق الشروط والحلقات ببناء حاسبة تفاعلية من سطر الأوامر.</p>
+        <a href="tools.html#ide" class="btn btn-gold btn-block btn-sm">ابدأ المشروع ←</a>
+      </div>
+      <div class="course-card">
+        <div class="course-icon" style="background:var(--c-bg-elev-2);color:var(--c-text-faint);">🔒</div>
+        <span class="status-pill locked">مقفل</span>
+        <h3>لعبة تخمين الأرقام</h3>
+        <p>يُفتح بعد إكمال وحدة «الشروط والحلقات» في دورة C++.</p>
+        <button class="btn btn-outline btn-block btn-sm" disabled>أكمل الوحدة أولًا</button>
+      </div>
+      <div class="course-card">
+        <div class="course-icon" style="background:var(--c-bg-elev-2);color:var(--c-text-faint);">🔒</div>
+        <span class="status-pill locked">مقفل</span>
+        <h3>مختبر أمني: جهاز مهاجم/هدف</h3>
+        <p>مشروع كامل ضمن مسار الأمن السيبراني — قيد الإعداد.</p>
+        <a href="courses.html#security" class="btn btn-outline btn-block btn-sm">شاهد خارطة الطريق</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+</body>
+</html>

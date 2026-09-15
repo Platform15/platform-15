@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الأدوات — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="ide">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">🧰 الأدوات</h1>
+    <p class="section-sub">محرر أكواد وطرفية تعليمية — للتدرّب بحرية خارج أي درس محدد.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="ide">💻 IDE</div>
+      <div class="tab" data-tab="terminal">🐧 محاكي الطرفية</div>
+    </div>
+
+    <div id="tab-ide">
+      <section class="card" id="ide">
+        <h2 class="card-title">💻 محرر الأكواد <span style="font-size:12px;color:var(--c-success);font-weight:600;">— تنفيذ حقيقي فعلي (JS وPython) داخل متصفحك، مجانًا</span></h2>
+        <textarea id="fullIde" class="terminal" spellcheck="false" style="min-height:280px;width:100%;border:1px solid var(--c-border);resize:vertical;">console.log("مرحبًا من منصة 15!");
+for(let i=1;i<=3;i++){ console.log("سطر رقم " + i); }</textarea>
+        <div class="flex gap-8" style="margin-top:12px;">
+          <button class="btn btn-gold btn-sm" id="runIdeBtn">▶️ تشغيل</button>
+          <button class="btn btn-outline btn-sm" id="saveIdeBtn">💾 حفظ محليًا</button>
+          <select class="btn btn-ghost btn-sm" id="ideLangSelect" style="border:1px solid var(--c-border);">
+            <option value="javascript" selected>JavaScript ✅</option>
+            <option value="python">Python ✅</option>
+            <option value="cpp">C++ ✅ (عبر خدمة عامة مجانية)</option>
+          </select>
+        </div>
+        <p class="section-sub" id="ideBackendNote" style="margin-top:8px;font-size:11.5px;"></p>
+        <div class="terminal vscode-output" id="fullIdeOutput" style="margin-top:10px;min-height:70px;">// سيظهر ناتج التشغيل هنا</div>
+      </section>
+
+    </div>
+
+    <div id="tab-terminal" style="display:none;">
+      <section class="card">
+        <div class="empty-state" style="margin-bottom:16px;border-color:var(--c-danger);">
+          <div class="emoji">⚠️</div>
+          بيئة تدريب معزولة بالكامل لأغراض التعلّم فقط. لا يجوز استخدام المهارات المكتسبة هنا إلا بشكل قانوني وأخلاقي.
+        </div>
+        <div class="flex gap-8 mb-14">
+          <button class="btn btn-gold btn-sm" id="btnKaliMode">Kali Mode 🛡️</button>
+          <button class="btn btn-outline btn-sm" id="btnTermuxMode">Termux Mode 📱</button>
+        </div>
+        <div class="terminal term-sim" id="termOutput" style="min-height:220px;"></div>
+        <div class="chat-input-row" style="margin-top:10px;direction:ltr;">
+          <input type="text" id="termInput" placeholder="type a command..." style="text-align:left;font-family:monospace;">
+          <button class="btn btn-gold btn-sm" id="termRunBtn">Run</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/ide-run.js"></script>
+<script src="js/terminal-sim.js"></script>
+<script src="js/code-editor.js"></script>
+<script>
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("tab-ide").style.display = t.dataset.tab==="ide" ? "block":"none";
+    document.getElementById("tab-terminal").style.display = t.dataset.tab==="terminal" ? "block":"none";
+  });
+});
+
+/* بانر ملاحظة الخدمة الخلفية للغات المُصرَّفة */
+document.getElementById("ideBackendNote").textContent =
+  (typeof COMPILER_BACKEND !== "undefined" && COMPILER_BACKEND === "judge0")
+    ? "C++ يعمل الآن عبر سيرفر Judge0 الخاص بالمنصة."
+    : "C++ يعمل حاليًا عبر خدمة Piston العامة المجانية (بلا سيرفر خاص بنا) — سيُنقل تلقائيًا لسيرفر Judge0 الخاص بالمنصة بعد وصولنا لعدد المتابعين المستهدف، لدعم كل لغات البرمجة بموثوقية أعلى.";
+
+/* قوالب بداية جاهزة لكل لغة — تُستبدل فقط إذا لم يعدّل المستخدم الكود بعد */
+const IDE_STARTERS = {
+  javascript: `console.log("مرحبًا من منصة 15!");\nfor(let i=1;i<=3;i++){ console.log("سطر رقم " + i); }`,
+  python: `print("مرحبًا من منصة 15!")\nfor i in range(1,4):\n    print("سطر رقم", i)`,
+  cpp: `#include <iostream>\nusing namespace std;\n\nint main(){\n    cout << "مرحبًا من منصة 15!" << endl;\n    for(int i=1;i<=3;i++) cout << "سطر رقم " << i << endl;\n    return 0;\n}`
+};
+
+/* محرر الأكواد — يتحوّل إلى محرر ملوّن بأسلوب Visual Studio Code (CodeMirror) */
+let ideEditor = null;
+(async ()=>{
+  ideEditor = await mountCodeEditor(document.getElementById("fullIde"), {
+    lang: "javascript", tabBar: true, minHeight: "280px"
+  });
+  if(!ideEditor) return; // فشل تحميل المحرر (مثلاً بلا اتصال إنترنت) — نكمل بدون كسر الصفحة
+  const saved = localStorage.getItem("mansa15_ide_draft");
+  if(saved) ideEditor.setValue(saved);
+})();
+
+document.getElementById("ideLangSelect")?.addEventListener("change", (e)=>{
+  if(!ideEditor) return;
+  const current = ideEditor.getValue().trim();
+  const isUnmodified = Object.values(IDE_STARTERS).includes(current) || !current;
+  if(isUnmodified) ideEditor.setValue(IDE_STARTERS[e.target.value] || "");
+  ideEditor.setLang(e.target.value);
+  document.getElementById("fullIdeOutput").textContent = "// سيظهر ناتج التشغيل هنا";
+});
+
+document.getElementById("runIdeBtn")?.addEventListener("click", ()=>{
+  if(!ideEditor) return;
+  const code = ideEditor.getValue();
+  const lang = document.getElementById("ideLangSelect").value;
+  const out = document.getElementById("fullIdeOutput");
+  runUserCode(lang, code, out);
+});
+document.getElementById("saveIdeBtn")?.addEventListener("click", ()=>{
+  if(!ideEditor) return;
+  localStorage.setItem("mansa15_ide_draft", ideEditor.getValue());
+  const out = document.getElementById("fullIdeOutput");
+  out.style.color = "#8fb8ff";
+  out.textContent = "💾 تم الحفظ محليًا في متصفحك.";
+});
+
+/* محاكي الطرفية — تفعيل فعلي، بألوان مستوحاة من واجهة Kali Linux */
+const termSim = new TerminalSim(document.getElementById("termOutput"), document.getElementById("termInput"));
+document.getElementById("btnKaliMode")?.addEventListener("click", ()=> termSim.setMode("kali"));
+document.getElementById("btnTermuxMode")?.addEventListener("click", ()=> termSim.setMode("termux"));
+document.getElementById("termRunBtn")?.addEventListener("click", ()=> termSim.submit());
+</script>
+</body>
+</html>

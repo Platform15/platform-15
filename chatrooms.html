@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>غرف الدردشة — منصة 15</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="chatrooms">
+<div id="shell-header"></div>
+<div class="app-layout">
+  <div id="shell-sidebar"></div>
+  <main class="main-content">
+    <h1 class="section-title">💬 غرف الدردشة</h1>
+    <p class="section-sub">انضم لغرف حسب المجال أو المستوى، وتناقش مباشرة مع المتعلمين — أو أنشئ غرفتك الخاصة.</p>
+
+    <div class="grid-3" id="roomsGrid"></div>
+  </main>
+</div>
+
+<!-- نافذة إنشاء غرفة جديدة — متاحة لكل مستخدم -->
+<div class="modal-overlay" id="createRoomOverlay">
+  <div class="modal-panel">
+    <h3>➕ إنشاء غرفة دردشة جديدة</h3>
+    <form id="createRoomForm">
+      <div class="field">
+        <label>اسم الغرفة</label>
+        <input id="roomName" type="text" placeholder="مثال: غرفة مشاريع الذكاء الاصطناعي" required maxlength="60">
+      </div>
+      <div class="field">
+        <label>وصف مختصر (اختياري)</label>
+        <textarea id="roomDesc" rows="2" placeholder="عن ماذا تدور النقاشات في هذه الغرفة؟" maxlength="140"></textarea>
+        <span class="text-faint" style="font-size:11px;">نص فقط — لا يمكن إرفاق صور أو مقاطع فيديو.</span>
+      </div>
+      <div class="field">
+        <label>أيقونة الغرفة</label>
+        <div class="icon-picker" id="iconPicker">
+          <button type="button" data-icon="💬" class="active">💬</button>
+          <button type="button" data-icon="💻">💻</button>
+          <button type="button" data-icon="🛡️">🛡️</button>
+          <button type="button" data-icon="🧠">🧠</button>
+          <button type="button" data-icon="🌐">🌐</button>
+          <button type="button" data-icon="🎮">🎮</button>
+          <button type="button" data-icon="📚">📚</button>
+          <button type="button" data-icon="🚀">🚀</button>
+        </div>
+      </div>
+      <div class="flex gap-8" style="margin-top:6px;">
+        <button type="button" class="btn btn-outline btn-block" id="cancelRoomBtn">إلغاء</button>
+        <button type="submit" class="btn btn-gold btn-block" id="submitRoomBtn">إنشاء الغرفة</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/shell.js"></script>
+<script>
+const ROOM_COLORS = ["#d9a441", "#4dc98a", "#e6524a", "#4a90e6", "#b98af0"];
+let cloudRooms = [];
+
+function allRooms(){
+  // الغرف المحلية (الافتراضية + التي أنشأها المستخدم محليًا) مدموجة مع
+  // أي غرف مشتركة أنشأها مستخدمون آخرون عبر Supabase (بدون تكرار المعرّفات)
+  const localIds = new Set((STATE.chatrooms || []).map(r => r.id));
+  const merged = [...(STATE.chatrooms || [])];
+  cloudRooms.forEach(r => { if(!localIds.has(r.id)) merged.push(r); });
+  return merged;
+}
+
+function roomCardHTML(room, i){
+  const color = room.color || ROOM_COLORS[i % ROOM_COLORS.length];
+  // عرض آمن دائمًا: أي نص يُدخله المستخدم (اسم/وصف/اسم المُنشئ) يُعقَّم هنا
+  // مرة أخرى قبل إدراجه في الصفحة، بحيث يستحيل عرض صورة أو فيديو عبره.
+  const safeName = escapeHTML(room.name);
+  const safeDesc = escapeHTML(room.description || "—");
+  const safeCreator = room.createdByName ? escapeHTML(room.createdByName) : "";
+  const creator = !room.builtin && safeCreator ? `<div class="text-faint" style="font-size:11px;">أنشأها ${safeCreator}</div>` : "";
+  return `
+    <div class="course-card">
+      <div class="course-icon" style="background:${color}22;color:${color};">${room.icon || "💬"}</div>
+      <h3>${safeName}</h3>
+      <p>${safeDesc}</p>
+      <div class="text-faint" style="font-size:11.5px;">🟢 ${room.online || 1} متصل الآن</div>
+      ${creator}
+      <button class="btn btn-gold btn-block btn-sm" onclick="showToast('سيتم فتح الدردشة الحية قريبًا')">انضمام</button>
+    </div>`;
+}
+
+function renderRooms(){
+  const grid = document.getElementById("roomsGrid");
+  const createCard = `
+    <div class="create-room-card" id="openCreateRoom">
+      <div class="emoji">➕</div>
+      <b>إنشاء غرفة جديدة</b>
+      <span class="text-faint" style="font-size:12px;">أي مستخدم يمكنه إنشاء غرفة</span>
+    </div>`;
+  grid.innerHTML = createCard + allRooms().map(roomCardHTML).join("");
+  document.getElementById("openCreateRoom").addEventListener("click", openCreateRoomModal);
+}
+
+function openCreateRoomModal(){
+  document.getElementById("createRoomOverlay").classList.add("open");
+}
+function closeCreateRoomModal(){
+  document.getElementById("createRoomOverlay").classList.remove("open");
+  document.getElementById("createRoomForm").reset();
+  document.querySelectorAll("#iconPicker button").forEach((b, idx) => b.classList.toggle("active", idx === 0));
+}
+
+document.getElementById("cancelRoomBtn").addEventListener("click", closeCreateRoomModal);
+document.getElementById("createRoomOverlay").addEventListener("click", e => {
+  if(e.target.id === "createRoomOverlay") closeCreateRoomModal();
+});
+
+let selectedIcon = "💬";
+document.querySelectorAll("#iconPicker button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#iconPicker button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedIcon = btn.dataset.icon;
+  });
+});
+
+document.getElementById("createRoomForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = document.getElementById("roomName").value.trim();
+  if(!name) return;
+  const description = document.getElementById("roomDesc").value.trim();
+  const color = ROOM_COLORS[Math.floor(Math.random() * ROOM_COLORS.length)];
+
+  const submitBtn = document.getElementById("submitRoomBtn");
+  submitBtn.disabled = true; submitBtn.textContent = "جارٍ الإنشاء...";
+
+  const { room, shared, error } = await createChatroom({ name, description, icon: selectedIcon, color });
+
+  submitBtn.disabled = false; submitBtn.textContent = "إنشاء الغرفة";
+
+  if(error || !room){
+    showToast("تعذّر إنشاء الغرفة، تحقق من الاسم");
+    return;
+  }
+
+  if(shared) cloudRooms.unshift(room);
+  closeCreateRoomModal();
+  renderRooms();
+  showToast(shared ? "تم إنشاء الغرفة ✅ وهي ظاهرة الآن لكل المستخدمين" : "تم إنشاء الغرفة محليًا ✅");
+});
+
+(async function init(){
+  renderRooms();
+  cloudRooms = await fetchCloudChatrooms();
+  renderRooms();
+})();
+</script>
+</body>
+</html>
