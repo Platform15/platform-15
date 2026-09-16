@@ -4,9 +4,8 @@
    Supabase Dashboard → Settings → API
    ========================================================= */
 
-const SUPABASE_URL = "https://wnqorccxnfnlmsettsbt.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_vXt5E19qRVhv-WuX-kUZag_Otd-JpYG";
-
+const SUPABASE_URL = "https://ywlhnkqhjddzeqgmlrko.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_I0lqP6n5OPau1GJovFZIsw_wD42VR6o";
 // عميل Supabase متاح عالميًا لباقي الملفات (data.js, shell.js, login.html)
 // نستخدم window.supabaseClient صراحة لأن const/let لا تُعلَّق تلقائيًا على window
 window.supabaseClient = (SUPABASE_URL.startsWith("PASTE_") || SUPABASE_ANON_KEY.startsWith("PASTE_"))
